@@ -39,8 +39,19 @@ def main() -> int:
 
     for note in notifications:
         text = MESSAGES[note["kind"]].format(date=note["date"])
-        send_telegram_message(token, chat_id, text)
-        print(f"Sent {note['kind']} notification for {note['date']}")
+        try:
+            send_telegram_message(token, chat_id, text)
+        except Exception as exc:
+            print(
+                f"Failed to send {note['kind']} notification for {note['date']}: {exc}",
+                file=sys.stderr,
+            )
+            if note["kind"] == "available":
+                new_state[note["date"]]["notified"] = False
+            elif note["kind"] == "failure":
+                new_state[note["date"]]["warned"] = False
+        else:
+            print(f"Sent {note['kind']} notification for {note['date']}")
 
     save_state(STATE_PATH, new_state)
     return 0

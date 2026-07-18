@@ -1,6 +1,8 @@
 from datetime import date
 from unittest.mock import patch
 
+import requests
+
 import check_tickets
 
 
@@ -47,3 +49,53 @@ def test_main_treats_scraper_exception_as_error_status_for_all_dates(tmp_path, m
     saved = check_tickets.load_state(str(state_path))
     assert saved["2026-09-02"]["consecutive_failures"] == 1
     assert saved["2026-09-09"]["consecutive_failures"] == 1
+
+
+def test_main_persists_state_when_one_of_two_sends_fails_mid_run(tmp_path, monkeypatch):
+    state_path = tmp_path / "state.json"
+    monkeypatch.setattr(check_tickets, "STATE_PATH", str(state_path))
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "TOKEN")
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "CHATID")
+
+    # 2026-09-09 is already at 2 consecutive failures, so a third "error"
+    # this run crosses the FAILURE_THRESHOLD and fires a "failure"
+    # notification in the same run that 2026-09-02 fires an "available"
+    # notification.
+    check_tickets.save_state(
+        str(state_path),
+        {
+            "2026-09-02": {
+                "notified": False,
+                "consecutive_failures": 0,
+                "warned": False,
+            },
+            "2026-09-09": {
+                "notified": False,
+                "consecutive_failures": 2,
+                "warned": False,
+            },
+        },
+    )
+
+    with patch("check_tickets.check_dates") as mock_check_dates, \
+         patch("check_tickets.send_telegram_message") as mock_send:
+        mock_check_dates.return_value = {
+            "2026-09-02": "available",
+            "2026-09-09": "error",
+        }
+        mock_send.side_effect = [None, requests.HTTPError("boom")]
+
+        exit_code = check_tickets.main()
+
+    assert exit_code == 0
+    assert mock_send.call_count == 2
+
+    saved = check_tickets.load_state(str(state_path))
+    # The "available" notification for 2026-09-02 sent successfully (first
+    # call), so it stays marked as notified.
+    assert saved["2026-09-02"]["notified"] is True
+    # The "failure" notification for 2026-09-09 raised (second call), so its
+    # flag is reverted so it gets retried on the next run instead of being
+    # silently swallowed.
+    assert saved["2026-09-09"]["warned"] is False
+    assert saved["2026-09-09"]["consecutive_failures"] == 3
