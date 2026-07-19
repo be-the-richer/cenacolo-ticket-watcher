@@ -38,21 +38,26 @@ def _day_grid(frame):
     return candidates[0]
 
 
-def _day_status(frame, year: int, month: int, day: int) -> str:
-    first_weekday, _ = calendar.monthrange(year, month)  # Monday=0 .. Sunday=6
-    grid = _day_grid(frame)
-    cell = grid.get_by_role("listitem").nth(first_weekday + day - 1)
-    label = (cell.get_attribute("aria-label") or cell.get_attribute("title") or "").strip().lower()
+def _classify_label(label: str) -> str:
+    label = label.strip().lower()
     if not label:
         return "unavailable"
     if "not available" in label:
         return "unavailable"
     if "available" in label:
         return "available"
-    return "unavailable"
+    raise RuntimeError(f"Unrecognized calendar cell label: {label!r}")
 
 
-def check_dates(target_dates: list) -> dict:
+def _day_status(frame, year: int, month: int, day: int) -> str:
+    first_weekday, _ = calendar.monthrange(year, month)  # Monday=0 .. Sunday=6
+    grid = _day_grid(frame)
+    cell = grid.get_by_role("listitem").nth(first_weekday + day - 1)
+    label = cell.get_attribute("aria-label") or cell.get_attribute("title") or ""
+    return _classify_label(label)
+
+
+def _check_dates_once(target_dates: list) -> dict:
     statuses = {}
     with sync_playwright() as p:
         browser = p.chromium.launch()
@@ -71,3 +76,10 @@ def check_dates(target_dates: list) -> dict:
         finally:
             browser.close()
     return statuses
+
+
+def check_dates(target_dates: list) -> dict:
+    try:
+        return _check_dates_once(target_dates)
+    except Exception:
+        return _check_dates_once(target_dates)
