@@ -1,11 +1,11 @@
 {
   "2026-09-02": {
-    "consecutive_failures": 1,
+    "consecutive_failures": 2,
     "notified": false,
     "warned": false
   },
   "2026-09-09": {
-    "consecutive_failures": 1,
+    "consecutive_failures": 2,
     "notified": false,
     "warned": false
   }
