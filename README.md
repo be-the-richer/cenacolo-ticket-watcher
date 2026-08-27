@@ -1,13 +1,14 @@
 # Cenacolo Vinciano Ticket Watcher
 
 Checks the official Last Supper (Cenacolo Vinciano, Milan) ticket calendar
-every 15 minutes for availability on 2026-09-02 and 2026-09-09, and sends a
-Telegram message the moment either date opens up.
+every 15 minutes for availability on 2026-10-30 and 2026-11-06, and sends 10
+Telegram messages the first time either date opens up. The public calendar
+does not expose an exact remaining-seat count, so an alert means you should
+open the booking page immediately and try to select two adult tickets.
 
 ## One-time setup
 
-1. **Create a GitHub repo** and push this code to it (public repo, so
-   Actions minutes are free and unlimited for this use case).
+1. This repository is already forked and ready to use.
 
 2. **Create a Telegram bot**: message [@BotFather](https://t.me/BotFather)
    on Telegram, send `/newbot`, follow the prompts. It gives you a bot

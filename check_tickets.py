@@ -8,17 +8,18 @@ from scraper import check_dates
 from state import load_state, save_state
 
 STATE_PATH = "state.json"
-TARGET_DATES = [date(2026, 9, 2), date(2026, 9, 9)]
+TARGET_DATES = [date(2026, 10, 30), date(2026, 11, 6)]
+AVAILABLE_ALERT_REPEATS = 10
 EVENT_URL = "https://cenacolovinciano.vivaticket.it/en/event/cenacolo-vinciano/151991?idt=2547"
 
 MESSAGES = {
     "available": (
-        "\U0001f39f️ Появились билеты в Тайную вечерю на {date}! "
-        "Бронируй скорее: " + EVENT_URL
+        "\U0001f39f️ 최후의 만찬 {date} 티켓이 열렸습니다! "
+        "성인 2장을 바로 확인하세요: " + EVENT_URL
     ),
     "failure": (
-        "⚠️ Не удалось проверить билеты на {date} 3 раза подряд — "
-        "возможно, сайт изменился. Проверь вручную: " + EVENT_URL
+        "⚠️ {date} 티켓을 3회 연속 확인하지 못했습니다. "
+        "사이트를 직접 확인하세요: " + EVENT_URL
     ),
 }
 
@@ -40,7 +41,9 @@ def main() -> int:
     for note in notifications:
         text = MESSAGES[note["kind"]].format(date=note["date"])
         try:
-            send_telegram_message(token, chat_id, text)
+            repeats = AVAILABLE_ALERT_REPEATS if note["kind"] == "available" else 1
+            for _ in range(repeats):
+                send_telegram_message(token, chat_id, text)
         except Exception as exc:
             print(
                 f"Failed to send {note['kind']} notification for {note['date']}: {exc}",
