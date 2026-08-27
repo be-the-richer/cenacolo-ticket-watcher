@@ -5,6 +5,8 @@ every 15 minutes for availability on 2026-10-30 and 2026-11-06, and sends 10
 Telegram messages the first time either date opens up. The public calendar
 does not expose an exact remaining-seat count, so an alert means you should
 open the booking page immediately and try to select two adult tickets.
+It also sends a daily health report at 09:00 Korea Standard Time with both
+target statuses, or an error alert if the booking calendar cannot be read.
 
 ## One-time setup
 
